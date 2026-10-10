@@ -1,0 +1,16 @@
+{
+  "Backend": "native",
+  "Metrics": 8,
+  "Processes": 1,
+  "MonitorNodeProcesses": 0,
+  "WorkingMB": 11.23,
+  "PrivateMB": 2.5,
+  "PeakWorkingMB": 11.41,
+  "SampleSeconds": 15.02,
+  "CPUSecondsAdded": 0.0,
+  "OneCorePercent": 0.0,
+  "StatusFileUnchanged": true,
+  "PreviousWorkingMB": 70.4,
+  "PreviousPrivateMB": 74.9,
+  "ReductionPercent": 84.0
+}
