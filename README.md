@@ -1,112 +1,112 @@
 # Codex Session Stats
 
-**A tiny Windows companion that puts session token usage directly inside Codex.**
+Lightweight, local session usage for the Windows Codex / ChatGPT Work desktop app. See tokens, context capacity, and average output speed in a compact floating bar or directly below the conversation composer.
 
-One native background process. About **11 MB working-set memory** in local testing.
-No persistent Node.js or Python runtime. Your statistics follow the conversation you select.
+![Compact floating bar with tokens, context warning light, output speed, cache rate and last-turn usage](assets/floating-bar.png)
 
-![Codex Session Stats inside the composer](assets/screenshot.png)
+*Native UI rendered with sample data. `173/258K` means about 173,000 context tokens used out of 258,000 available.*
 
-*A real screenshot of the English "This Session" panel. A gray indicator and `--` mean that the current view does not expose native context data.*
+[Download for Windows x64](https://github.com/kjw0716/codex-session-stats/releases/latest) · [Changelog](CHANGELOG.md) · [MIT license](LICENSE)
 
-## Small by design
+## What's new in v0.2
 
-- **Native C++ helper:** a single executable, using Windows WinHTTP and the system SQLite library.
-- **Incremental log reading:** process newly appended usage events instead of rescanning and retaining an entire conversation history.
-- **One selected session:** keep a compact summary, not a cache of every open conversation or its message bodies.
-- **Quiet when idle:** about 2.5-second checks while running and 10-second checks after completion. Hidden windows stop requesting statistics.
-- **Update only when needed:** unchanged statistics do not rewrite the UI; unchanged connection state does not rewrite the status file.
-- **In-app display:** a compact bar below the composer and one expandable panel, with no separate dashboard window.
+- **Separate floating window and dashboard.** Closing the dashboard leaves floating statistics running.
+- **Small enough for one line.** Resize down to 220 × 40 pixels. Metrics pack by actual text width with two-space gaps, hiding only when they cannot fit.
+- **Context at a glance.** Used/capacity counts with a green, yellow, or red dot immediately before them.
+- **Adjustable appearance.** Mini, Compact, and Details presets; 35–100% opacity; saved size and pin settings.
+- **Relay/API-key provider support.** No provider sign-in is needed when Codex writes compatible local usage records.
+- **Desktop shortcut with its own icon.** Optional startup through the configured ChatGPT shortcut.
 
-### Local memory measurement
-
-| Measurement | Earlier Node prototype | Native helper |
-|---|---:|---:|
-| Working set | 70.4 MB | **11.23 MB** |
-| Private memory | 74.9 MB | **2.50 MB** |
-| Persistent helper processes | 1 Node.js process | **1 native process** |
-
-The native helper used about **84% less working-set memory** in this measurement.
-A 15-second idle sample recorded no additional process CPU time. These are observations from one Windows 11 machine, not universal limits or a promise of zero power use. They measure the helper, not the Codex app or its renderer. The sanitized measurement is in [docs/benchmark.json](docs/benchmark.json).
-
-## What it reads
-
-| Metric | What it means |
-|---|---|
-| **Total session tokens** | Cumulative usage across the selected conversation's recorded requests, including repeated input context. |
-| **Last turn tokens** | Usage for the most recent completed turn; remains stable while the next turn runs. |
-| **Cache hit rate** | Cached input tokens divided by input tokens. |
-| **Context compactions** | Recorded context-compaction events. |
-| **Status** | Running, completed, paused, or not started. |
-| **Context usage** | Used tokens, window capacity, and percentage read from **Codex's own context component**. |
-| **Time to first token** | Recorded time to the first model token, which can be a reasoning token. |
-| **Average output speed** | Completed turns' output tokens divided by their total duration, in `tok/s`. |
-
-Select the checkboxes to choose which metrics appear in the bar. Selections persist across sessions. Counts use `K`, `M`, and `B`; hover over the total for an exact count. Conversation titles retain their original names.
-
-The green/yellow/red indicator uses **native context occupancy**, never cumulative token consumption:
-
-- **Green:** below 70%.
-- **Yellow:** 70% to below 85%.
-- **Red:** 85% or above.
-- **Gray:** native context information is unavailable.
-
-These are capacity reminders, not measured model-ability thresholds. Output speed includes thinking and tool waits, updates after completed turns, and is **not pure text-generation TPS**.
+![Narrower floating bar retaining tokens, context, speed and cache rate](assets/floating-bar-narrow.png)
 
 ## Quick start
 
-Requirements: Windows with the Microsoft Store Codex/ChatGPT desktop package (`OpenAI.Codex`) and Windows PowerShell 5.1 or newer. Tested on Windows 11 x64. **Node.js, Python, and a compiler are not required to run a release build.**
+Windows 11 x64 is the tested platform. Use the Microsoft Store Codex / ChatGPT desktop package (`OpenAI.Codex`) with locally stored Codex/Work conversations. Windows PowerShell 5.1 or newer is required. **Release builds need no Node.js, Python, or compiler.**
 
-1. Download the Windows x64 ZIP from [Releases](https://github.com/kjw0716/codex-session-stats/releases/latest) and extract it.
-2. For first-time activation, **quit Codex normally**. Closing a window may leave the application running in the background.
-3. Double-click **`Start-SessionStats.cmd`** in the extracted folder.
-4. Open a locally stored Codex/Work conversation. Click the new bar below the composer to expand the panel.
+1. Download and extract the Windows x64 ZIP from [Releases](https://github.com/kjw0716/codex-session-stats/releases/latest).
+2. Open **`Start-SessionStats.cmd`**.
+3. Select **Floating window** and click **Start** for immediate use, even if Codex is already open.
+4. Use the floating bar's **⋯** menu to choose a conversation. Resize its edges, drag its body, or open **Dashboard** to change opacity.
 
-Use the same start command for later launches. It reuses an existing helper rather than starting duplicates. If an already-running app was opened without the local debugging interface, the launcher asks you to quit normally first; it does not interrupt the conversation.
+The floating view shows one manually selected conversation from up to 30 recent, non-archived main sessions. It does not automatically follow the conversation currently visible in Codex. Increase the window's height to reveal metric cards and a conversation picker. Right-click also opens the menu.
 
-Double-click **`Stop-SessionStats.cmd`** to stop this helper and remove its panel while leaving Codex open.
+Run **`Install-Shortcuts.ps1`** to create the **Session Stats** desktop shortcut. Files are copied to `%LOCALAPPDATA%\CodexSessionStats`; no Windows login service is installed.
 
-PowerShell equivalents:
+### Inside the conversation
 
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Start-SessionStats.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Stop-SessionStats.ps1
-```
+Choose **Inside conversation** in Dashboard and click **Start**. This mode follows the selected Codex conversation and adds an expandable statistics panel below the composer.
 
-The execution-policy setting applies only to that PowerShell process; it does not change the machine's policy.
+![English session statistics embedded below the conversation composer](assets/screenshot.png)
 
-## Local data and compatibility
+*An earlier embedded-mode screenshot. Gray and `--` indicate unavailable context data.*
 
-The helper reads the selected conversation's authoritative rollout path from local SQLite metadata, then streams its JSONL usage events. It traverses local log records but does **not retain or upload message bodies**. Titles are obtained from local metadata and the session index.
+Embedded mode needs the desktop app's loopback debugging interface. If the app was opened without it, the launcher waits for you to exit normally and then reopens it; it never force-closes Codex. **Save startup setting** configures a verified desktop ChatGPT shortcut, preparing embedded statistics on future launches even when automatic statistics startup is off. Taskbar and Start menu entries are not changed. Unknown shortcuts are preserved; the installer creates **ChatGPT (Session Ready)** instead.
 
-The display connects to the desktop app's local CDP interface at **`127.0.0.1:9335`**. Runtime requests stay on the machine. The launcher validates that this port is loopback-only and belongs to the installed desktop app. It does not edit the app bundle, authentication files, source logs, model configuration, or other plugins. No API key is needed.
+To stop both modes, open **`Stop-SessionStats.cmd`**. Codex remains open. Closing just Dashboard leaves an active floating window or embedded helper running.
 
-Compatibility boundaries:
+## Metrics
 
-- Ordinary Chat conversations and cloud-only history do not provide these local Codex logs.
-- Context readings depend on Codex's current internal DOM/React/SVG component. App updates can change it; unavailable data stays gray/`--`, with no substitution from cumulative consumption.
-- The helper reads the canonical rollout, with a newest-matching-file fallback when metadata is unavailable. It does not merge missing historical fragments or child-agent sessions.
-- Deduplication covers normal sequential logs, cumulative usage mirrors, and recent duplicate records. Arbitrary replay of very old request-only records is outside the supported history model.
-- This version targets the primary app window of the Microsoft Store desktop package.
+| Metric | Meaning |
+|---|---|
+| **Tokens** | Total session consumption, including repeated input across requests. This is not current context length. |
+| **Last turn** | Usage for the last completed turn; stays stable while the next turn runs. |
+| **Output speed** | Completed turns' output tokens divided by their total duration, in `tok/s`. Includes thinking and tool waits, not pure text-generation speed. |
+| **Cache rate** | Cached input tokens divided by input tokens. |
+| **Context** | Used tokens / model context capacity. Floating mode reads the latest local request snapshot; embedded mode reads Codex's context component. |
+| **Compactions** | Recorded context-compaction events. |
+| **Model** | Model recorded for the selected conversation. |
 
-Diagnostic files are written to `%LOCALAPPDATA%\CodexSessionMonitor`. The helper exits after the app's local interface remains unavailable for roughly a minute.
+Embedded mode also offers status and time to first model token, which can be a reasoning token. Its checkboxes control the embedded bar. Floating mode fits metrics in this order: tokens, context, speed, cache, last turn, compactions. Hover over the floating bar for exact counts and timing details.
+
+The dot tracks **context occupancy**, never cumulative session consumption:
+
+| Dot | Context capacity used |
+|---|---|
+| 🟢 Green | Below 70% |
+| 🟡 Yellow | 70% to below 85% |
+| 🔴 Red | 85% or above |
+| ⚪ Gray | Context data unavailable |
+
+These are capacity reminders, not measured model-ability thresholds. Floating context uses the latest recorded request's input plus output tokens and model window; it can lag Codex's live meter. Compaction or model changes clear stale context until a new usable record arrives. No capacity is guessed from the model name.
+
+## Small by design
+
+Native C++ and Win32 UI, with incremental log reading and a compact summary of one selected session. The dashboard and floating window share one process and reader. No persistent Node.js/Python runtime, browser window, or bundled web framework is needed for floating mode.
+
+| Mode | Working set | Private memory | Measurement |
+|---|---:|---:|---|
+| Embedded helper | 11.23 MB | 2.50 MB | [Earlier local measurement](docs/benchmark.json) |
+| Dashboard + floating view | 18.36 MB | 54.84 MB | [Local v0.2 measurement](docs/panel-benchmark.json) |
+
+These measure the helper processes only, excluding Codex and its renderer. They are observations on one Windows 11 machine, not fixed memory limits. The embedded sample added no CPU time over 15 idle seconds; the floating sample added 15.62 ms. Neither implies zero power use.
+
+Usage checks run about every 2.5 seconds during a turn and every 10 seconds after completion. The reader processes appended records rather than retaining conversation bodies. Embedded rendering avoids rewriting unchanged values.
+
+## Data and compatibility
+
+- Reads local SQLite thread metadata and the selected conversation's authoritative JSONL rollout. It does not retain or upload message bodies.
+- Works with relay/API-key providers **when compatible usage records exist locally**. Missing usage cannot be reconstructed. These are consumption statistics, not account credits or remaining subscription quota.
+- Ordinary Chat and cloud-only conversations do not supply these local Codex logs. Child-agent sessions and missing historical fragments are not merged into the selected main session.
+- Floating mode needs no debugging connection. Embedded mode uses **`127.0.0.1:9335`**, verified as loopback-only and owned by the installed desktop app. It does not edit the app bundle, authentication files, source logs, model configuration, or other plugins.
+- Embedded conversation discovery and context readings depend on internal app components and can break after app updates. Unavailable readings stay gray / `--`.
+- Normal sequential logs, cumulative mirrors, and recent duplicate records are deduplicated. Arbitrary replay of very old request-only records is outside the supported history model.
+
+Preferences and diagnostics are stored in `%LOCALAPPDATA%\CodexSessionMonitor`. Replaced shortcuts are backed up in its `shortcut-backups` directory. The embedded helper exits after its app connection remains unavailable for roughly a minute.
 
 ## Build and test
 
-For development only: MinGW-w64 `g++` with C++17 support. Node.js is used only for isolated UI tests.
+Development requires MinGW-w64 `g++` and `windres` with C++17 support. Tests additionally use Node.js 22.14+ for built-in SQLite fixtures.
 
 ```powershell
-.\native\build.ps1
-.\tests\run-tests.ps1
-.\Build-Release.ps1
+.\native\build.ps1 -Compiler C:\path\to\g++.exe
+.\tests\run-tests.ps1 -Compiler C:\path\to\g++.exe
+.\Build-Release.ps1 -Compiler C:\path\to\g++.exe
 ```
 
-The test suite covers 23 native-reader scenarios and 21 isolated UI scenarios, including mirrored counts, partial records, compaction resets, large message bodies, session switching, native context precedence, indicator boundaries, stale React values, and low-frequency refresh. Tests use synthetic data and do not control a running Codex app.
+Tests cover 23 native-reader scenarios, 21 embedded UI scenarios, measured-text packing and warning boundaries, and native-panel integration: resizing, opacity, separate-window lifetime, relay records, bounded conversation selection, legacy metadata, and desktop shortcut installation. Fixtures are synthetic and do not control a running Codex app.
 
 ## License and credits
 
-MIT licensed. See [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md).
+MIT licensed. See [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md). The conversation-discovery approach was inspired by [JiaYang-BUAA/Codex-Desktop-Usage-Monitor-Windows](https://github.com/JiaYang-BUAA/Codex-Desktop-Usage-Monitor-Windows). JSON parsing uses [nlohmann/json](https://github.com/nlohmann/json), with its MIT license included.
 
-The UI/conversation-discovery approach was inspired by [JiaYang-BUAA/Codex-Desktop-Usage-Monitor-Windows](https://github.com/JiaYang-BUAA/Codex-Desktop-Usage-Monitor-Windows). This project focuses on local session statistics with a native lightweight helper. JSON parsing uses [nlohmann/json](https://github.com/nlohmann/json), with its original MIT license included.
-
-This is an independent community project, not affiliated with or endorsed by OpenAI.
+Independent community project; not affiliated with or endorsed by OpenAI.

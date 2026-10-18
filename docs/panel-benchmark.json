@@ -1,0 +1,9 @@
+{
+  "mode": "native-floating",
+  "workingSetMB": 18.36,
+  "privateMemoryMB": 54.84,
+  "idleSampleSeconds": 15,
+  "cpuAddedMs": 15.62,
+  "date": "2026-10-18",
+  "scope": "SessionStats process only; excludes ChatGPT"
+}

@@ -256,6 +256,7 @@ class SystemSqlite {
     }
 public:
     struct Metadata { std::filesystem::path rollout; std::string title, model; };
+    struct Recent { std::string id, title, model; };
     SystemSqlite() {
         std::array<wchar_t, MAX_PATH + 32> directory{};
         auto count = GetSystemDirectoryW(directory.data(), MAX_PATH);
@@ -271,6 +272,35 @@ public:
     SystemSqlite(const SystemSqlite&) = delete;
     SystemSqlite& operator=(const SystemSqlite&) = delete;
     ~SystemSqlite() { if (library_) FreeLibrary(library_); }
+    std::vector<Recent> recent(const std::filesystem::path& codexHome) {
+        std::vector<Recent> result;
+        if (!open_ || !close_ || !prepare_ || !step_ || !column_ || !finalize_) return result;
+        auto utf8 = (codexHome / L"state_5.sqlite").u8string();
+        Database* database = nullptr;
+        if (open_(utf8.c_str(), &database, 1, nullptr) != 0) { if (database) close_(database); return result; }
+        if (timeout_) timeout_(database, 150);
+        // Never use first_user_message or retain message bodies for this picker.
+        const char* queries[] = {
+            "SELECT id, CASE WHEN length(name) BETWEEN 1 AND 240 AND instr(name,char(10))=0 THEN name WHEN length(title) BETWEEN 1 AND 240 AND instr(title,char(10))=0 THEN title ELSE 'Untitled conversation' END, model FROM threads WHERE archived=0 AND source NOT LIKE '%subagent%' AND source NOT LIKE '%review%' ORDER BY coalesce(recency_at_ms,updated_at_ms,updated_at*1000) DESC LIMIT 30",
+            "SELECT id, CASE WHEN length(title) BETWEEN 1 AND 240 AND instr(title,char(10))=0 THEN title ELSE 'Untitled conversation' END, model FROM threads WHERE archived=0 AND source NOT LIKE '%subagent%' AND source NOT LIKE '%review%' ORDER BY updated_at DESC LIMIT 30"
+        };
+        Statement* statement = nullptr;
+        for (auto query : queries) {
+            if (prepare_(database, query, -1, &statement, nullptr) == 0) break;
+            if (statement) finalize_(statement);
+            statement = nullptr;
+        }
+        if (statement) {
+            while (result.size() < 30 && step_(statement) == 100) {
+                auto text = [&](int col) { const auto value = column_(statement, col); return value ? std::string(reinterpret_cast<const char*>(value)) : std::string{}; };
+                auto id = text(0);
+                if (validId(id)) result.push_back({std::move(id), text(1), text(2)});
+            }
+            finalize_(statement);
+        }
+        close_(database);
+        return result;
+    }
     std::optional<Metadata> metadata(const std::filesystem::path& codexHome, const std::string& id) {
         if (!open_ || !close_ || !prepare_ || !bind_ || !step_ || !column_ || !finalize_) return std::nullopt;
         const auto utf8 = (codexHome / L"state_5.sqlite").u8string();
