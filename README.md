@@ -1,29 +1,35 @@
+<div align="center">
+
+<img src="assets/session-stats.svg" alt="Codex Session Stats icon" width="96">
+
 # Codex Session Stats
 
-Lightweight, local session usage for the Windows Codex / ChatGPT Work desktop app. See tokens, context capacity, and average output speed in a compact floating bar or directly below the conversation composer.
+**Live token, context, cache and speed stats for Codex conversations: a tiny native Windows bar, no runtime required.**
 
-![Compact floating bar with tokens, context warning light, output speed, cache rate and last-turn usage](assets/floating-bar.png)
+[![Latest release](https://img.shields.io/github/v/release/kjw0716/codex-session-stats?style=flat-square&color=2ea043)](https://github.com/kjw0716/codex-session-stats/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/kjw0716/codex-session-stats/total?style=flat-square&color=blue)](https://github.com/kjw0716/codex-session-stats/releases)
+[![Windows CI](https://img.shields.io/github/actions/workflow/status/kjw0716/codex-session-stats/windows.yml?branch=main&style=flat-square&label=CI)](https://github.com/kjw0716/codex-session-stats/actions/workflows/windows.yml)
+[![Platform](https://img.shields.io/badge/Windows%2011-x64-0078D4?style=flat-square&logo=windows11&logoColor=white)](#quick-start)
+[![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?style=flat-square&logo=cplusplus&logoColor=white)](native)
+[![License: MIT](https://img.shields.io/github/license/kjw0716/codex-session-stats?style=flat-square)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/kjw0716/codex-session-stats?style=flat-square&color=yellow)](https://github.com/kjw0716/codex-session-stats/stargazers)
 
-*Native UI rendered with sample data. `173/258K` means about 173,000 context tokens used out of 258,000 available.*
+[**Download for Windows**](https://github.com/kjw0716/codex-session-stats/releases/latest) · [Quick start](#quick-start) · [Metrics](#metrics) · [Changelog](CHANGELOG.md)
 
-[Download for Windows x64](https://github.com/kjw0716/codex-session-stats/releases/latest) · [Changelog](CHANGELOG.md) · [MIT license](LICENSE)
+<img src="assets/floating-bar.png" alt="Compact floating bar with tokens, context warning light, output speed, cache rate and last-turn usage">
 
-## What's new in v0.2.1
+<sub>Native UI rendered with sample data. <code>173/258K</code> means about 173,000 context tokens used out of 258,000 available.</sub>
 
-Opening ChatGPT through the configured desktop shortcut no longer opens a black PowerShell window. A native GUI launcher runs the existing startup script without creating a console. Existing startup preferences are preserved.
+</div>
 
-To upgrade, stop Session Stats with `Stop-SessionStats.cmd` from your current installation so its executables can be replaced. Extract v0.2.1 and run `Install-Shortcuts.ps1 -ConfigureCodexEntry` with your existing `-InstallDirectory` if you use a custom location. ChatGPT can stay open. This refreshes the ChatGPT shortcut and preserves your automatic-start choice and other preferences. Replaced shortcuts are backed up.
+## Highlights
 
-### Included from v0.2
-
-- **Separate floating window and dashboard.** Closing the dashboard leaves floating statistics running.
-- **Small enough for one line.** Resize down to 220 × 40 pixels. Metrics pack by actual text width with two-space gaps, hiding only when they cannot fit.
-- **Context at a glance.** Used/capacity counts with a green, yellow, or red dot immediately before them.
-- **Adjustable appearance.** Mini, Compact, and Details presets; 35–100% opacity; saved size and pin settings.
-- **Relay/API-key provider support.** No provider sign-in is needed when Codex writes compatible local usage records.
-- **Desktop shortcut with its own icon.** Optional startup through the configured ChatGPT shortcut.
-
-![Narrower floating bar retaining tokens, context, speed and cache rate](assets/floating-bar-narrow.png)
+- **Featherweight.** 11–18 MB helper working set in local measurements; native C++ / Win32. Release builds need no Node.js, Python or compiler.
+- **Every number that matters.** Tokens, last turn, context used/capacity, cache rate, output speed and compactions.
+- **Context traffic light.** A green, yellow or red dot tells you when the conversation is getting full.
+- **Two ways to view.** A resizable floating bar (down to 220 × 40 px) or a panel embedded right below the Codex composer.
+- **Local only.** Reads Codex's local logs. Nothing is uploaded and message bodies are not retained.
+- **Relay / API-key friendly.** Works without provider sign-in when Codex writes compatible local usage records.
 
 ## Quick start
 
@@ -99,6 +105,23 @@ Usage checks run about every 2.5 seconds during a turn and every 10 seconds afte
 
 Preferences and diagnostics are stored in `%LOCALAPPDATA%\CodexSessionMonitor`. Replaced shortcuts are backed up in its `shortcut-backups` directory. The embedded helper exits after its app connection remains unavailable for roughly a minute.
 
+## What's new in v0.2.1
+
+Opening ChatGPT through the configured desktop shortcut no longer opens a black PowerShell window. A native GUI launcher runs the existing startup script without creating a console. Existing startup preferences are preserved.
+
+To upgrade, stop Session Stats with `Stop-SessionStats.cmd` from your current installation so its executables can be replaced. Extract v0.2.1 and run `Install-Shortcuts.ps1 -ConfigureCodexEntry` with your existing `-InstallDirectory` if you use a custom location. ChatGPT can stay open. This refreshes the ChatGPT shortcut and preserves your automatic-start choice and other preferences. Replaced shortcuts are backed up.
+
+### Included from v0.2
+
+- **Separate floating window and dashboard.** Closing the dashboard leaves floating statistics running.
+- **Small enough for one line.** Resize down to 220 × 40 pixels. Metrics pack by actual text width with two-space gaps, hiding only when they cannot fit.
+- **Context at a glance.** Used/capacity counts with a green, yellow, or red dot immediately before them.
+- **Adjustable appearance.** Mini, Compact, and Details presets; 35–100% opacity; saved size and pin settings.
+- **Relay/API-key provider support.** No provider sign-in is needed when Codex writes compatible local usage records.
+- **Desktop shortcut with its own icon.** Optional startup through the configured ChatGPT shortcut.
+
+![Narrower floating bar retaining tokens, context, speed and cache rate](assets/floating-bar-narrow.png)
+
 ## Build and test
 
 Development requires MinGW-w64 `g++` and `windres` with C++17 support. Tests additionally use Node.js 22.14+ for built-in SQLite fixtures.
@@ -119,3 +142,11 @@ Launcher regression checks also verify that the real PowerShell child has no con
 MIT licensed. See [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md). The conversation-discovery approach was inspired by [JiaYang-BUAA/Codex-Desktop-Usage-Monitor-Windows](https://github.com/JiaYang-BUAA/Codex-Desktop-Usage-Monitor-Windows). JSON parsing uses [nlohmann/json](https://github.com/nlohmann/json), with its MIT license included.
 
 Independent community project; not affiliated with or endorsed by OpenAI.
+
+---
+
+<div align="center">
+
+If Session Stats saves you a trip through the logs, a [star](https://github.com/kjw0716/codex-session-stats/stargazers) helps other Codex users find it.
+
+</div>
