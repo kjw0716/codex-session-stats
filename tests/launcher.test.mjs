@@ -63,10 +63,12 @@ exit 37
 & (Join-Path $env:LAUNCHER_SOURCE 'Install-Shortcuts.ps1') -ConfigureCodexEntry -InstallDirectory (Join-Path $env:LAUNCHER_FIXTURE 'installed') -DesktopPath (Join-Path $env:LAUNCHER_FIXTURE 'desktop')`;
   ps(configure);
   assert.deepEqual(JSON.parse(readFileSync(prefs, 'utf8').replace(/^\uFEFF/, '')), { autoStart: true, floatWidth: 634 });
-  const verify = `$s=(New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $env:LAUNCHER_FIXTURE 'desktop/ChatGPT.lnk')); if($s.TargetPath -ne (Join-Path $env:LAUNCHER_FIXTURE 'installed/Open-ChatGPT.exe') -or $s.Arguments -ne ''){throw 'Incorrect ChatGPT shortcut'}`;
+  const verify = `$s=(New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $env:LAUNCHER_FIXTURE 'desktop/ChatGPT.lnk')); $expected=(Get-Item -LiteralPath (Join-Path $env:LAUNCHER_FIXTURE 'installed/Open-ChatGPT.exe')).FullName; if($s.TargetPath -ne $expected -or $s.Arguments -ne ''){throw ('Incorrect ChatGPT shortcut: target='+$s.TargetPath+' expected='+$expected+' args='+$s.Arguments)}`;
   ps(verify);
   assert.ok(existsSync(join(installed, 'Open-ChatGPT.exe')));
   ps(configure);
+  ps(verify);
+  ps(configure.replace("Join-Path $env:LAUNCHER_SOURCE 'Install-Shortcuts.ps1'", "Join-Path $env:LAUNCHER_FIXTURE 'installed/Install-Shortcuts.ps1'"));
   ps(verify);
   assert.equal(existsSync(join(desktop, 'ChatGPT (Session Ready).lnk')), false);
   console.log('PASS clean install and repeat install keep the ChatGPT shortcut on the packaged native launcher');

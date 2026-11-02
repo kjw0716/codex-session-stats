@@ -11,7 +11,10 @@ foreach ($taskFile in $taskFiles) {
     if (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot $taskFile) -PathType Leaf)) { throw "Missing installation file: $taskFile" }
 }
 New-Item -ItemType Directory -Path $InstallDirectory,(Join-Path $InstallDirectory 'assets'),$DesktopPath -Force | Out-Null
-if ([IO.Path]::GetFullPath($InstallDirectory).TrimEnd('\') -ne [IO.Path]::GetFullPath($PSScriptRoot).TrimEnd('\')) {
+# Windows shortcuts resolve 8.3 aliases (for example RUNNER~1) to long paths.
+# Compare canonical paths so reinstalling does not create a duplicate shortcut.
+$InstallDirectory = (Get-Item -LiteralPath $InstallDirectory).FullName
+if ($InstallDirectory.TrimEnd('\') -ne (Get-Item -LiteralPath $PSScriptRoot).FullName.TrimEnd('\')) {
     foreach ($taskFile in $taskFiles) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $taskFile) -Destination (Join-Path $InstallDirectory $taskFile) -Force }
 }
 $taskState = Join-Path $env:LOCALAPPDATA 'CodexSessionMonitor'
@@ -57,7 +60,17 @@ if ($ConfigureCodexEntry) {
         $taskItem = (New-Object -ComObject Shell.Application).Namespace($DesktopPath).ParseName('ChatGPT.lnk')
         $taskAppId = $taskItem.ExtendedProperty('System.AppUserModel.ID')
         $taskTargetId = $taskItem.ExtendedProperty('System.Link.TargetParsingPath')
-        $taskKnownLink = $taskAppId -like ($taskPackage.PackageFamilyName + '!*') -or $taskTargetId -like ($taskPackage.PackageFamilyName + '!*') -or ($taskExisting.Arguments -like '*Open-Codex.ps1*' -and $taskExisting.Arguments.Contains($InstallDirectory)) -or ($taskExisting.TargetPath -eq (Join-Path $InstallDirectory 'Open-ChatGPT.exe'))
+        $taskLegacyEntry = $false
+        if ($taskExisting.Arguments -match '(?i)(?:^|\s)-File\s+(?:"(?<script>[^\"]+)"|(?<script>\S+))') {
+            $taskLegacyScript = Get-Item -LiteralPath $Matches['script'] -ErrorAction SilentlyContinue
+            $taskLegacyEntry = $taskLegacyScript -and $taskLegacyScript.FullName -eq (Join-Path $InstallDirectory 'Open-Codex.ps1')
+        }
+        $taskLauncherEntry = $false
+        if (-not [string]::IsNullOrWhiteSpace($taskExisting.TargetPath)) {
+            $taskTargetFile = Get-Item -LiteralPath $taskExisting.TargetPath -ErrorAction SilentlyContinue
+            $taskLauncherEntry = $taskTargetFile -and $taskTargetFile.FullName -eq (Join-Path $InstallDirectory 'Open-ChatGPT.exe')
+        }
+        $taskKnownLink = $taskAppId -like ($taskPackage.PackageFamilyName + '!*') -or $taskTargetId -like ($taskPackage.PackageFamilyName + '!*') -or $taskLegacyEntry -or $taskLauncherEntry
     } else { $taskKnownLink = $true }
     if (-not $taskKnownLink) { $taskAppLinkPath = Join-Path $DesktopPath 'ChatGPT (Session Ready).lnk' }
     Backup-TaskShortcut $taskAppLinkPath

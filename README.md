@@ -12,7 +12,7 @@ Lightweight, local session usage for the Windows Codex / ChatGPT Work desktop ap
 
 Opening ChatGPT through the configured desktop shortcut no longer opens a black PowerShell window. A native GUI launcher runs the existing startup script without creating a console. Existing startup preferences are preserved.
 
-To upgrade, extract v0.2.1 and run `Install-Shortcuts.ps1 -ConfigureCodexEntry` with your existing `-InstallDirectory` if you use a custom location. This refreshes the ChatGPT shortcut and preserves your automatic-start choice and other preferences. Replaced shortcuts are backed up.
+To upgrade, stop Session Stats with `Stop-SessionStats.cmd` from your current installation so its executables can be replaced. Extract v0.2.1 and run `Install-Shortcuts.ps1 -ConfigureCodexEntry` with your existing `-InstallDirectory` if you use a custom location. ChatGPT can stay open. This refreshes the ChatGPT shortcut and preserves your automatic-start choice and other preferences. Replaced shortcuts are backed up.
 
 ### Included from v0.2
 

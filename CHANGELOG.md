@@ -4,6 +4,7 @@
 
 - Fix the black PowerShell window appearing when opening ChatGPT through the Session Stats desktop shortcut. The shortcut now uses a native GUI launcher that creates PowerShell without a console.
 - Include the launcher in portable installations and release ZIPs. Reinstalling recognizes the new shortcut; existing PowerShell shortcuts are upgraded with backups, and unrelated shortcuts remain untouched.
+- Normalize Windows short-path aliases when recognizing existing shortcuts.
 - Preserve automatic statistics preferences on reinstall unless explicitly changed, along with the existing embedded/floating startup behavior.
 - Add process-level regression checks for console allocation, Unicode installation paths, child exit codes, startup preferences, shortcut upgrades, and extracted release packages.
 
