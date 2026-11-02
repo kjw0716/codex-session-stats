@@ -17,3 +17,7 @@ $taskPanel = Join-Path (Split-Path $PSScriptRoot -Parent) 'SessionStats.exe'
 & $taskCompiler -std=c++17 -O2 -static -s -municode -mwindows -D_WIN32_WINNT=0x0602 (Join-Path $PSScriptRoot 'window.cpp') $taskResource -o $taskPanel -luser32 -lgdi32 -lshell32 -lcomctl32
 if ($LASTEXITCODE -ne 0) { throw 'Native panel compilation failed.' }
 Write-Output $taskPanel
+$taskLauncher = Join-Path (Split-Path $PSScriptRoot -Parent) 'Open-ChatGPT.exe'
+& $taskCompiler -std=c++17 -O2 -static -s -municode -mwindows -D_WIN32_WINNT=0x0602 (Join-Path $PSScriptRoot 'launcher.cpp') -o $taskLauncher -luser32
+if ($LASTEXITCODE -ne 0) { throw 'Native ChatGPT launcher compilation failed.' }
+Write-Output $taskLauncher

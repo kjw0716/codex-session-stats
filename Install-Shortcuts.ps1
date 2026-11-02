@@ -6,7 +6,7 @@ param(
     [string]$DesktopPath = [Environment]::GetFolderPath('Desktop')
 )
 $ErrorActionPreference = 'Stop'
-$taskFiles = @('SessionStats.exe','SessionMonitor.exe','session-ui.js','Start-SessionStats.ps1','Stop-SessionStats.ps1','Start-EmbeddedStats.ps1','Stop-EmbeddedStats.ps1','Open-Codex.ps1','Install-Shortcuts.ps1','Start-SessionStats.cmd','Stop-SessionStats.cmd','assets/session-stats.ico')
+$taskFiles = @('SessionStats.exe','SessionMonitor.exe','Open-ChatGPT.exe','session-ui.js','Start-SessionStats.ps1','Stop-SessionStats.ps1','Start-EmbeddedStats.ps1','Stop-EmbeddedStats.ps1','Open-Codex.ps1','Install-Shortcuts.ps1','Start-SessionStats.cmd','Stop-SessionStats.cmd','assets/session-stats.ico')
 foreach ($taskFile in $taskFiles) {
     if (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot $taskFile) -PathType Leaf)) { throw "Missing installation file: $taskFile" }
 }
@@ -21,7 +21,9 @@ $taskPrefs = @{}
 if (Test-Path -LiteralPath $taskPrefsFile) {
     try { (Get-Content -LiteralPath $taskPrefsFile -Raw | ConvertFrom-Json).PSObject.Properties | ForEach-Object { $taskPrefs[$_.Name] = $_.Value } } catch { }
 }
-$taskPrefs['autoStart'] = ($AutoStart -eq 1)
+if ($PSBoundParameters.ContainsKey('AutoStart') -or -not $taskPrefs.ContainsKey('autoStart')) {
+    $taskPrefs['autoStart'] = ($AutoStart -eq 1)
+}
 $taskPrefs | ConvertTo-Json | Set-Content -LiteralPath $taskPrefsFile -Encoding UTF8
 $taskShell = New-Object -ComObject WScript.Shell
 $taskBackup = Join-Path $taskState ('shortcut-backups/' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff'))
@@ -55,15 +57,15 @@ if ($ConfigureCodexEntry) {
         $taskItem = (New-Object -ComObject Shell.Application).Namespace($DesktopPath).ParseName('ChatGPT.lnk')
         $taskAppId = $taskItem.ExtendedProperty('System.AppUserModel.ID')
         $taskTargetId = $taskItem.ExtendedProperty('System.Link.TargetParsingPath')
-        $taskKnownLink = $taskAppId -like ($taskPackage.PackageFamilyName + '!*') -or $taskTargetId -like ($taskPackage.PackageFamilyName + '!*') -or ($taskExisting.Arguments -like '*Open-Codex.ps1*' -and $taskExisting.Arguments.Contains($InstallDirectory))
+        $taskKnownLink = $taskAppId -like ($taskPackage.PackageFamilyName + '!*') -or $taskTargetId -like ($taskPackage.PackageFamilyName + '!*') -or ($taskExisting.Arguments -like '*Open-Codex.ps1*' -and $taskExisting.Arguments.Contains($InstallDirectory)) -or ($taskExisting.TargetPath -eq (Join-Path $InstallDirectory 'Open-ChatGPT.exe'))
     } else { $taskKnownLink = $true }
     if (-not $taskKnownLink) { $taskAppLinkPath = Join-Path $DesktopPath 'ChatGPT (Session Ready).lnk' }
     Backup-TaskShortcut $taskAppLinkPath
     # A fresh shortcut must replace a Store link; changing its target in place retains its app identity.
     if (Test-Path -LiteralPath $taskAppLinkPath) { Remove-Item -LiteralPath $taskAppLinkPath }
     $taskAppLink = $taskShell.CreateShortcut($taskAppLinkPath)
-    $taskAppLink.TargetPath = Join-Path $env:WINDIR 'System32/WindowsPowerShell/v1.0/powershell.exe'
-    $taskAppLink.Arguments = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + (Join-Path $InstallDirectory 'Open-Codex.ps1') + '"'
+    $taskAppLink.TargetPath = Join-Path $InstallDirectory 'Open-ChatGPT.exe'
+    $taskAppLink.Arguments = ''
     $taskAppLink.WorkingDirectory = $InstallDirectory
     $taskAppIcon = Join-Path $taskPackage.InstallLocation 'app/resources/chatgpt-app-light.ico'
     if (Test-Path -LiteralPath $taskAppIcon) {

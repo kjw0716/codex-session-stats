@@ -8,7 +8,13 @@ Lightweight, local session usage for the Windows Codex / ChatGPT Work desktop ap
 
 [Download for Windows x64](https://github.com/kjw0716/codex-session-stats/releases/latest) · [Changelog](CHANGELOG.md) · [MIT license](LICENSE)
 
-## What's new in v0.2
+## What's new in v0.2.1
+
+Opening ChatGPT through the configured desktop shortcut no longer opens a black PowerShell window. A native GUI launcher runs the existing startup script without creating a console. Existing startup preferences are preserved.
+
+To upgrade, extract v0.2.1 and run `Install-Shortcuts.ps1 -ConfigureCodexEntry` with your existing `-InstallDirectory` if you use a custom location. This refreshes the ChatGPT shortcut and preserves your automatic-start choice and other preferences. Replaced shortcuts are backed up.
+
+### Included from v0.2
 
 - **Separate floating window and dashboard.** Closing the dashboard leaves floating statistics running.
 - **Small enough for one line.** Resize down to 220 × 40 pixels. Metrics pack by actual text width with two-space gaps, hiding only when they cannot fit.
@@ -101,9 +107,12 @@ Development requires MinGW-w64 `g++` and `windres` with C++17 support. Tests add
 .\native\build.ps1 -Compiler C:\path\to\g++.exe
 .\tests\run-tests.ps1 -Compiler C:\path\to\g++.exe
 .\Build-Release.ps1 -Compiler C:\path\to\g++.exe
+.\tests\package.test.ps1
 ```
 
 Tests cover 23 native-reader scenarios, 21 embedded UI scenarios, measured-text packing and warning boundaries, and native-panel integration: resizing, opacity, separate-window lifetime, relay records, bounded conversation selection, legacy metadata, and desktop shortcut installation. Fixtures are synthetic and do not control a running Codex app.
+
+Launcher regression checks also verify that the real PowerShell child has no console, that Unicode paths and exit codes work, that automatic-start preferences are respected, and that old, new, and unrelated shortcuts are handled correctly. Release validation repeats these checks against the extracted ZIP and verifies its SHA-256 checksum.
 
 ## License and credits
 

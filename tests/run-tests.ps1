@@ -19,7 +19,9 @@ if (Test-Path -LiteralPath (Join-Path $taskRoot 'SessionStats.exe')) {
     & node.exe (Join-Path $PSScriptRoot 'panel.test.mjs')
     if ($LASTEXITCODE -ne 0) { throw 'Native panel integration tests failed.' }
 } else { throw 'Build the native executables before running the integration tests.' }
-$taskScripts = @('Start-SessionStats.ps1','Stop-SessionStats.ps1','Start-EmbeddedStats.ps1','Stop-EmbeddedStats.ps1','Install-Shortcuts.ps1','Open-Codex.ps1','Build-Release.ps1','native/build.ps1','tests/run-tests.ps1','tools/New-Icon.ps1')
+& node.exe (Join-Path $PSScriptRoot 'launcher.test.mjs')
+if ($LASTEXITCODE -ne 0) { throw 'Native launcher integration tests failed.' }
+$taskScripts = @('Start-SessionStats.ps1','Stop-SessionStats.ps1','Start-EmbeddedStats.ps1','Stop-EmbeddedStats.ps1','Install-Shortcuts.ps1','Open-Codex.ps1','Build-Release.ps1','native/build.ps1','tests/run-tests.ps1','tests/package.test.ps1','tools/New-Icon.ps1')
 foreach ($taskScript in $taskScripts) {
     $taskTokens = $null
     $taskErrors = $null

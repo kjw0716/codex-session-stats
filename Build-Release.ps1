@@ -1,12 +1,12 @@
 [CmdletBinding()]
-param([string]$Version = '0.2.0', [string]$Compiler = 'g++.exe')
+param([string]$Version = '0.2.1', [string]$Compiler = 'g++.exe')
 $ErrorActionPreference = 'Stop'
 if ($Version -notmatch '^\d+\.\d+\.\d+(?:-[a-zA-Z0-9.-]+)?$') { throw 'Use a semantic version such as 0.1.0.' }
 & (Join-Path $PSScriptRoot 'native/build.ps1') -Compiler $Compiler | Out-Null
 $taskDistribution = Join-Path $PSScriptRoot 'dist'
 $taskPackage = Join-Path $taskDistribution ('codex-session-stats-v' + $Version + '-windows-x64')
 New-Item -ItemType Directory -Path $taskPackage -Force | Out-Null
-$taskFiles = @('SessionStats.exe','SessionMonitor.exe','session-ui.js','Start-SessionStats.ps1','Stop-SessionStats.ps1','Start-EmbeddedStats.ps1','Stop-EmbeddedStats.ps1','Install-Shortcuts.ps1','Open-Codex.ps1','Start-SessionStats.cmd','Stop-SessionStats.cmd','README.md','CHANGELOG.md','LICENSE','NOTICE.md')
+$taskFiles = @('SessionStats.exe','SessionMonitor.exe','Open-ChatGPT.exe','session-ui.js','Start-SessionStats.ps1','Stop-SessionStats.ps1','Start-EmbeddedStats.ps1','Stop-EmbeddedStats.ps1','Install-Shortcuts.ps1','Open-Codex.ps1','Start-SessionStats.cmd','Stop-SessionStats.cmd','README.md','CHANGELOG.md','LICENSE','NOTICE.md')
 foreach ($taskFile in $taskFiles) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $taskFile) -Destination $taskPackage -Force }
 New-Item -ItemType Directory -Path (Join-Path $taskPackage 'assets'),(Join-Path $taskPackage 'docs'),(Join-Path $taskPackage 'native/vendor') -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'assets/screenshot.png') -Destination (Join-Path $taskPackage 'assets/screenshot.png') -Force
