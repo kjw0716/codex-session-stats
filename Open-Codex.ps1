@@ -6,4 +6,4 @@ $taskAutoStart = $false
 if (Test-Path -LiteralPath $taskPreferences) {
     try { $taskAutoStart = (Get-Content -LiteralPath $taskPreferences -Raw | ConvertFrom-Json).autoStart -eq $true } catch { }
 }
-& (Join-Path $PSScriptRoot 'Start-EmbeddedStats.ps1') -AppOnly:(-not $taskAutoStart)
+& (Join-Path $PSScriptRoot 'Start-EmbeddedStats.ps1') -OpenApp -AppOnly:(-not $taskAutoStart)

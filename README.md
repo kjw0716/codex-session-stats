@@ -52,7 +52,7 @@ Choose **Inside conversation** in Dashboard and click **Start**. This mode follo
 
 *An earlier embedded-mode screenshot. Gray and `--` indicate unavailable context data.*
 
-Embedded mode needs the desktop app's loopback debugging interface. If the app was opened without it, the launcher waits for you to exit normally and then reopens it; it never force-closes Codex. **Save startup setting** configures a verified desktop ChatGPT shortcut, preparing embedded statistics on future launches even when automatic statistics startup is off. Taskbar and Start menu entries are not changed. Unknown shortcuts are preserved; the installer creates **ChatGPT (Session Ready)** instead.
+Embedded mode needs the desktop app's loopback debugging interface. If the app is already running without it, the desktop shortcut still opens ChatGPT. To enable embedded statistics for that session, quit the app fully and open it again from the configured shortcut. **Save startup setting** configures a verified desktop ChatGPT shortcut, preparing embedded statistics on future launches even when automatic statistics startup is off. Taskbar and Start menu entries are not changed. Unknown shortcuts are preserved; the installer creates **ChatGPT (Session Ready)** instead.
 
 To stop both modes, open **`Stop-SessionStats.cmd`**. Codex remains open. Closing just Dashboard leaves an active floating window or embedded helper running.
 
@@ -105,11 +105,11 @@ Usage checks run about every 2.5 seconds during a turn and every 10 seconds afte
 
 Preferences and diagnostics are stored in `%LOCALAPPDATA%\CodexSessionMonitor`. Replaced shortcuts are backed up in its `shortcut-backups` directory. The embedded helper exits after its app connection remains unavailable for roughly a minute.
 
-## What's new in v0.2.1
+## What's new in v0.2.2
 
-Opening ChatGPT through the configured desktop shortcut no longer opens a black PowerShell window. A native GUI launcher runs the existing startup script without creating a console. Existing startup preferences are preserved.
+Close the ChatGPT window and click its configured desktop shortcut to reopen it. If ChatGPT is still running in the background, the shortcut restores the app without the Session Stats quit prompt. This works with automatic statistics startup on or off.
 
-To upgrade, stop Session Stats with `Stop-SessionStats.cmd` from your current installation so its executables can be replaced. Extract v0.2.1 and run `Install-Shortcuts.ps1 -ConfigureCodexEntry` with your existing `-InstallDirectory` if you use a custom location. ChatGPT can stay open. This refreshes the ChatGPT shortcut and preserves your automatic-start choice and other preferences. Replaced shortcuts are backed up.
+To upgrade, stop Session Stats with `Stop-SessionStats.cmd` from your current installation so its executables can be replaced. Extract v0.2.2 and run `.\Install-Shortcuts.ps1 -ConfigureCodexEntry` from PowerShell in the extracted folder with your existing `-InstallDirectory` if you use a custom location. ChatGPT can stay open. This refreshes the ChatGPT shortcut and preserves your automatic-start choice and other preferences. Replaced shortcuts are backed up.
 
 ### Included from v0.2
 

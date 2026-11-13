@@ -46,16 +46,31 @@ exit 37
   console.log('PASS GUI launcher starts PowerShell without a console, handles Unicode/spaces/punctuation, and returns child exit status');
 
   copyFileSync(join(root, 'Open-Codex.ps1'), script);
-  writeFileSync(join(launcherDir, 'Start-EmbeddedStats.ps1'), `param([switch]$AppOnly)
-@{appOnly=[bool]$AppOnly} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'result.json')
+  writeFileSync(join(launcherDir, 'Start-EmbeddedStats.ps1'), `param([switch]$AppOnly, [switch]$OpenApp)
+@{appOnly=[bool]$AppOnly; openApp=[bool]$OpenApp} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'result.json')
 `);
   for (const [value, appOnly] of [[null, true], ['{"autoStart":false}', true], ['{"autoStart":true}', false], ['invalid json', true]]) {
     if (value === null) { if (existsSync(prefs)) rmSync(prefs); }
     else writeFileSync(prefs, value);
     run(0);
-    assert.equal(JSON.parse(readFileSync(output, 'utf8').replace(/^\uFEFF/, '')).appOnly, appOnly);
+    assert.deepEqual(JSON.parse(readFileSync(output, 'utf8').replace(/^\uFEFF/, '')), { appOnly, openApp: true });
   }
   console.log('PASS real startup script preserves automatic stats on/off and missing/invalid preference behavior');
+
+  writeFileSync(join(fixture, 'AppxManifest.xml'), '<Package><Applications><Application Id="App" Executable="app/ChatGPT.exe"/></Applications></Package>');
+  for (const autoStart of [false, true]) {
+    writeFileSync(prefs, JSON.stringify({ autoStart }));
+    ps(`Add-Type -TypeDefinition 'public static class SessionMonitorActivation { public static void Open(string id, string args) { System.IO.File.AppendAllText(System.IO.Path.Combine(System.Environment.GetEnvironmentVariable("LAUNCHER_FIXTURE"), "activations"), id + "|" + args + System.Environment.NewLine); } }'
+function Get-AppxPackage { [pscustomobject]@{Version='1.0'; PackageFamilyName='OpenAI.Codex_fixture'; InstallLocation=$env:LAUNCHER_FIXTURE} }
+function Get-Process { [pscustomobject]@{ProcessName='ChatGPT'; MainWindowHandle=0} }
+function Get-NetTCPConnection { }
+& (Join-Path $env:LAUNCHER_SOURCE 'Open-Codex.ps1')`);
+    assert.equal(readFileSync(join(fixture, 'activations'), 'utf8').trim(), 'OpenAI.Codex_fixture!App|');
+    rmSync(join(fixture, 'activations'));
+    const log = readFileSync(join(local, 'CodexSessionMonitor', 'launcher.log'), 'utf8').trim().split(/\r?\n/).at(-1);
+    assert.ok(log.endsWith(autoStart ? 'Embedded stats are unavailable for this session.' : 'app-reopened'), log);
+  }
+  console.log('PASS desktop shortcut reactivates a windowless app without a statistics endpoint for both preferences');
 
   // Mock only Store-package discovery, so CI never needs ChatGPT installed.
   writeFileSync(prefs, JSON.stringify({ autoStart: true, floatWidth: 634 }));

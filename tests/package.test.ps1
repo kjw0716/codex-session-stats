@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string]$Version = '0.2.1')
+param([string]$Version = '0.2.2')
 $ErrorActionPreference = 'Stop'
 if ($Version -notmatch '^\d+\.\d+\.\d+(?:-[a-zA-Z0-9.-]+)?$') { throw 'Invalid release version.' }
 $taskRoot = Split-Path $PSScriptRoot -Parent

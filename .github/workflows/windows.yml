@@ -35,7 +35,7 @@ jobs:
           MSYS2_LOCATION: ${{ steps.msys2.outputs.msys2-location }}
         run: |
           $compiler = Join-Path $env:MSYS2_LOCATION 'ucrt64/bin/g++.exe'
-          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME -replace '^v', '' } else { '0.2.1' }
+          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME -replace '^v', '' } else { '0.2.2' }
           ./Build-Release.ps1 -Compiler $compiler -Version $version
           ./tests/run-tests.ps1 -Compiler $compiler
           ./tests/package.test.ps1 -Version $version

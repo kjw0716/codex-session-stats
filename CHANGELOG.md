@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2 — 2026-11-13
+
+- Reopen ChatGPT from the configured desktop shortcut after closing its window, even when the background app has no statistics endpoint. The shortcut restores the existing app without asking the user to quit.
+- Test reopening with automatic statistics both enabled and disabled, including from the extracted release ZIP.
+
 ## 0.2.1 — 2026-11-02
 
 - Fix the black PowerShell window appearing when opening ChatGPT through the Session Stats desktop shortcut. The shortcut now uses a native GUI launcher that creates PowerShell without a console.

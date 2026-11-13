@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string]$Version = '0.2.1', [string]$Compiler = 'g++.exe')
+param([string]$Version = '0.2.2', [string]$Compiler = 'g++.exe')
 $ErrorActionPreference = 'Stop'
 if ($Version -notmatch '^\d+\.\d+\.\d+(?:-[a-zA-Z0-9.-]+)?$') { throw 'Use a semantic version such as 0.1.0.' }
 & (Join-Path $PSScriptRoot 'native/build.ps1') -Compiler $Compiler | Out-Null
@@ -10,7 +10,7 @@ $taskFiles = @('SessionStats.exe','SessionMonitor.exe','Open-ChatGPT.exe','sessi
 foreach ($taskFile in $taskFiles) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $taskFile) -Destination $taskPackage -Force }
 New-Item -ItemType Directory -Path (Join-Path $taskPackage 'assets'),(Join-Path $taskPackage 'docs'),(Join-Path $taskPackage 'native/vendor') -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'assets/screenshot.png') -Destination (Join-Path $taskPackage 'assets/screenshot.png') -Force
-foreach ($taskImage in @('floating-bar.png','floating-bar-narrow.png')) {
+foreach ($taskImage in @('floating-bar.png','floating-bar-narrow.png','session-stats.svg')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot ('assets/' + $taskImage)) -Destination (Join-Path $taskPackage ('assets/' + $taskImage)) -Force
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'assets/session-stats.ico') -Destination (Join-Path $taskPackage 'assets/session-stats.ico') -Force

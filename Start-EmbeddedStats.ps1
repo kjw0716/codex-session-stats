@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([switch]$WaitForClose, [switch]$Quiet, [switch]$AppOnly, [string]$PanelResult)
+param([switch]$WaitForClose, [switch]$Quiet, [switch]$AppOnly, [switch]$OpenApp, [string]$PanelResult)
 $ErrorActionPreference = 'Stop'
 $taskMonitorPort = 9335
 $taskStateRoot = Join-Path $env:LOCALAPPDATA 'CodexSessionMonitor'
@@ -51,33 +51,15 @@ function Get-TaskCdp {
         return @($taskTargets | Where-Object { $_.type -eq 'page' -and $_.url -like 'app:*/index.html*' }).Count -gt 0
     } catch { return $false }
 }
-$taskMutex = [Threading.Mutex]::new($false, 'Local\CodexSessionMonitorLauncher')
-$taskAcquired = $false
-try {
-    try { $taskAcquired = $taskMutex.WaitOne(0) } catch [Threading.AbandonedMutexException] { $taskAcquired = $true }
-    if (-not $taskAcquired) { Write-TaskStatus 'Session Stats startup is already in progress.'; return }
-    if (-not (Test-Path -LiteralPath $taskNativePath -PathType Leaf)) { throw 'SessionMonitor.exe is missing. Build the project or use a release containing the executable.' }
-    if (-not (Get-TaskCdp)) {
-        if (@(Get-Process -Name ChatGPT -ErrorAction SilentlyContinue).Count) {
-            if (-not $WaitForClose) {
-                Write-TaskStatus 'Quit Codex/ChatGPT normally, then run Start-SessionStats.ps1.'
-                if (-not $Quiet) {
-                    Add-Type -AssemblyName System.Windows.Forms
-                    [void][System.Windows.Forms.MessageBox]::Show('Quit Codex/ChatGPT normally, then run Start-SessionStats.ps1. Your saved conversations are retained.', 'Session Stats')
-                }
-                return
-            }
-            Write-TaskStatus 'waiting-for-normal-exit'
-            while (@(Get-Process -Name ChatGPT -ErrorAction SilentlyContinue).Count) { Start-Sleep -Seconds 2 }
-        }
-        $taskPackage = Get-AppxPackage -Name OpenAI.Codex | Sort-Object Version -Descending | Select-Object -First 1
-        if (-not $taskPackage) { throw 'The Microsoft Store Codex desktop app (OpenAI.Codex) was not found.' }
-        [xml]$taskManifest = Get-Content -LiteralPath (Join-Path $taskPackage.InstallLocation 'AppxManifest.xml') -Raw
-        $taskApplication = @($taskManifest.Package.Applications.Application | Where-Object { $_.Executable -like '*ChatGPT.exe' }) | Select-Object -First 1
-        if (-not $taskApplication) { throw 'The desktop app launch entry was not found in its package manifest.' }
-        $taskAumid = $taskPackage.PackageFamilyName + '!' + $taskApplication.Id
-        if (-not ('SessionMonitorActivation' -as [type])) {
-            Add-Type -TypeDefinition @'
+function Open-TaskDesktopApp([string]$LaunchArguments) {
+    $taskPackage = Get-AppxPackage -Name OpenAI.Codex | Sort-Object Version -Descending | Select-Object -First 1
+    if (-not $taskPackage) { throw 'The Microsoft Store Codex desktop app (OpenAI.Codex) was not found.' }
+    [xml]$taskManifest = Get-Content -LiteralPath (Join-Path $taskPackage.InstallLocation 'AppxManifest.xml') -Raw
+    $taskApplication = @($taskManifest.Package.Applications.Application | Where-Object { $_.Executable -like '*ChatGPT.exe' }) | Select-Object -First 1
+    if (-not $taskApplication) { throw 'The desktop app launch entry was not found in its package manifest.' }
+    $taskAumid = $taskPackage.PackageFamilyName + '!' + $taskApplication.Id
+    if (-not ('SessionMonitorActivation' -as [type])) {
+        Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 [ComImport, Guid("2e941141-7f97-4756-ba1d-9decde894a3d"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
@@ -96,8 +78,36 @@ public static class SessionMonitorActivation {
     }
 }
 '@
+    }
+    [void][SessionMonitorActivation]::Open($taskAumid, $LaunchArguments)
+}
+$taskMutex = [Threading.Mutex]::new($false, 'Local\CodexSessionMonitorLauncher')
+$taskAcquired = $false
+try {
+    # Closing the last window can leave the Store app running in the tray.
+    $taskReopened = $OpenApp -and @(Get-Process -Name ChatGPT -ErrorAction SilentlyContinue).Count -gt 0
+    if ($taskReopened) {
+        Open-TaskDesktopApp ''
+        if ($AppOnly) { Write-TaskStatus 'app-reopened'; return }
+    }
+    try { $taskAcquired = $taskMutex.WaitOne(0) } catch [Threading.AbandonedMutexException] { $taskAcquired = $true }
+    if (-not $taskAcquired) { Write-TaskStatus 'Session Stats startup is already in progress.'; return }
+    if (-not (Test-Path -LiteralPath $taskNativePath -PathType Leaf)) { throw 'SessionMonitor.exe is missing. Build the project or use a release containing the executable.' }
+    if (-not (Get-TaskCdp)) {
+        if ($taskReopened) { Write-TaskStatus 'App reopened. Embedded stats are unavailable for this session.'; return }
+        if (-not $OpenApp -and @(Get-Process -Name ChatGPT -ErrorAction SilentlyContinue).Count) {
+            if (-not $WaitForClose) {
+                Write-TaskStatus 'Quit Codex/ChatGPT normally, then run Start-SessionStats.ps1.'
+                if (-not $Quiet) {
+                    Add-Type -AssemblyName System.Windows.Forms
+                    [void][System.Windows.Forms.MessageBox]::Show('Quit Codex/ChatGPT normally, then run Start-SessionStats.ps1. Your saved conversations are retained.', 'Session Stats')
+                }
+                return
+            }
+            Write-TaskStatus 'waiting-for-normal-exit'
+            while (@(Get-Process -Name ChatGPT -ErrorAction SilentlyContinue).Count) { Start-Sleep -Seconds 2 }
         }
-        [void][SessionMonitorActivation]::Open($taskAumid, '--remote-debugging-port=9335 --remote-debugging-address=127.0.0.1')
+        Open-TaskDesktopApp '--remote-debugging-port=9335 --remote-debugging-address=127.0.0.1'
         Write-TaskStatus 'Opened the desktop app. Checking the local statistics endpoint.'
         $taskDeadline = (Get-Date).AddSeconds(45)
         while (-not (Get-TaskCdp)) {
